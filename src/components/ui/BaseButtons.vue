@@ -2,20 +2,32 @@
   <div class="buttons-container">
     <button class="cancel" @click="$emit('click-cancel')">CANCEL</button>
     <button
-      @click="$emit('click-insert')"
+      @click="$emit('click-submit')"
       :disabled="isConfirmDisabled"
       class="insert"
-      :class="{ 'disable-button': isDisabledClass }"
+      :class="{
+        'disable-button': isDisabledClass,
+        apply: isApplyButton,
+        insert: isInsertButton,
+      }"
     >
-      INSERT
+      {{ buttonText.toUpperCase() }}
     </button>
   </div>
 </template>
 
 <script>
 export default {
-  props: ["clickApply", "isConfirmDisabled", "isDisabledClass"],
-  emits: ["click-cancel", "click-insert"],
+  props: ["isConfirmDisabled", "isDisabledClass", "buttonText"],
+  emits: ["click-cancel", "submit"],
+  computed: {
+    isApplyButton() {
+      return this.buttonText.trim().toUpperCase() === "APPLY";
+    },
+    isInsertButton() {
+      return this.buttonText.trim().toUpperCase() === "INSERT";
+    },
+  },
 };
 </script>
 
@@ -28,6 +40,8 @@ button {
   flex-basis: 50%;
   padding: 20px 0px;
   color: #fff;
+  border: none;
+  cursor: pointer;
 }
 
 .cancel {
@@ -38,7 +52,12 @@ button {
   background-color: #105219;
 }
 
+.apply {
+  background-color: #1a90ff;
+}
+
 .disable-button {
   background-color: #62cc70;
+  cursor: default;
 }
 </style>
