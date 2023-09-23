@@ -1,116 +1,77 @@
 <template>
   <base-dialog
     :show="show"
-    title="Insert image"
-    @click-submit="insertImage"
+    title="Upload image"
+    @click-submit="uploadImage"
     @click-cancel="$emit('close-dialog')"
-    :isConfirmDisabled="isImageNull"
+    :isSubmitDisabled="isImageNull"
     :isDisabledClass="isImageNull"
     :dialogSize="'big'"
     :buttonText="'insert'"
   >
     <div class="main-content">
       <section class="form-section">
-        <form>
-          <div class="form-control">
-            <label for="source-url">Source URL</label>
-            <input
-              type="url"
-              id="source-url"
-              placeholder="Add image URL"
-              v-model.trim="imageUrl"
-              :disabled="file"
-            />
+        <div class="form-control">
+          <div class="counter-label">
+            <label for="alt-text">Alt text (recommended)</label>
+            <span>{{ altCounter }}</span>
           </div>
-          <div class="form-control">
-            <div class="counter-label">
-              <label for="alt-text">Alt text (recommended)</label>
-              <span>{{ altCounter }}</span>
-            </div>
-            <input
-              type="text"
-              id="alt-text"
-              placeholder="Alternate text for an image"
-              maxlength="60"
-              ref="altText"
-              v-model.trim="altText"
-            />
+          <input
+            type="text"
+            id="alt-text"
+            placeholder="Alternate text for an image"
+            maxlength="60"
+            v-model.trim="altText"
+          />
+        </div>
+        <div class="form-control">
+          <div class="counter-label">
+            <label for="title-text">Title (Optional)</label>
+            <span>{{ titleCounter }}</span>
           </div>
-          <div class="form-control">
-            <div class="counter-label">
-              <label for="title-text">Title (Optional)</label>
-              <span>{{ titleCounter }}</span>
-            </div>
-            <input
-              type="text"
-              id="title-text"
-              placeholder="Tooltip text for image"
-              maxlength="60"
-              v-model.trim="imageTitle"
-            />
-          </div>
-          <div class="form-control">
-            <button class="apply" @click.prevent="applyChanges">Apply</button>
-          </div>
-          <h3>--OR--</h3>
-          <h2>Upload Image</h2>
-          <div class="form-control">
-            <input
-              type="file"
-              accept="image/*"
-              @change="onFileChange"
-              v-if="fileButtonReady"
-              :disabled="!isImageUrlEmpty"
-            />
-            <input
-              type="button"
-              value="Reset"
-              @click="resetButton"
-              v-if="resetButtonReady"
-            />
-          </div>
-        </form>
+          <input
+            type="text"
+            id="title-text"
+            placeholder="Tooltip text for image"
+            maxlength="60"
+            v-model.trim="imageTitle"
+          />
+        </div>
+        <div class="form-control">
+          <input
+            type="file"
+            accept="image/*"
+            @change="onFileChange"
+            v-if="fileButtonReady"
+          />
+          <input
+            type="button"
+            value="Reset"
+            @click="resetInput"
+            v-if="resetButtonReady"
+          />
+        </div>
       </section>
       <div class="preview-card">
         <header class="image-preview-title">Image preview</header>
         <div class="image-container">
-          <img
-            :src="image"
-            :alt="alt"
-            :title="title"
-            @error="checkIfImage"
-            ref="imageRef"
-          />
+          <img :src="image" :alt="this.altText" :title="this.imageTitle" />
         </div>
       </div>
     </div>
-    <!-- <base-buttons
-      @click-submit="insertImage"
-      @click-cancel="$emit('close-dialog')"
-      :isConfirmDisabled="isImageNull"
-      :isDisabledClass="isImageNull"
-      buttonText="INSERT"
-    >
-    </base-buttons> -->
   </base-dialog>
 </template>
 
 <script>
 export default {
-  props: ["show"],
+  props: ["show", "getSelection"],
   emits: ["close-dialog"],
   data() {
     return {
-      imageUrl: "",
       altText: "",
       imageTitle: "",
       file: false,
       image: null,
-      alt: null,
-      title: null,
-      showError: true,
-      validUrl: true,
-      insertedImage: null,
     };
   },
   methods: {
@@ -118,57 +79,26 @@ export default {
       this.image = URL.createObjectURL(event.target.files[0]);
       this.file = true;
     },
-    resetButton() {
-      this.image = null;
-      this.alt = null;
-      this.title = null;
-      this.file = false;
-    },
     resetInput() {
-      this.imageUrl = "";
       this.altText = "";
       this.imageTitle = "";
       this.file = false;
       this.image = null;
     },
-    checkIfImage() {
-      this.image = null;
-    },
-    applyChanges() {
-      this.validateUrl();
-      if (this.imageUrl.length > 0 && this.validUrl) {
-        console.log("valid url");
-        this.image = this.imageUrl;
-      }
-      this.alt = this.altText;
-      this.title = this.imageTitle;
-    },
-    validateUrl() {
-      try {
-        new URL(this.imageUrl);
-        this.validUrl = true;
-      } catch (error) {
-        this.validUrl = false;
-      }
-    },
-
-    insertImage() {
-      const editor = document.getElementById("editorId");
+    uploadImage() {
       const imgElement = document.createElement("img");
       imgElement.src = this.image;
       imgElement.alt = this.altText;
       imgElement.title = this.imageTitle;
-      const selection = window.getSelection();
-      editor.focus(selection);
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(imgElement);
-      range.setStartAfter(imgElement);
-      range.collapse(true);
-
-      // const imgTag = `<img src=${this.image} alt=${this.altText} title=${this.imageTitle}/>`;
-      // editor.innerHTML += imgTag;
-
+      if (this.getSelection) {
+        this.getSelection.deleteContents();
+        this.getSelection.insertNode(imgElement);
+        this.getSelection.setStartAfter(imgElement);
+        this.getSelection.collapse(true);
+      } else {
+        const editor = document.getElementById("editorId");
+        editor.appendChild(imgElement);
+      }
       this.$emit("close-dialog");
     },
   },
@@ -187,9 +117,6 @@ export default {
     },
     resetButtonReady() {
       return this.image !== null && this.file;
-    },
-    isImageUrlEmpty() {
-      return this.imageUrl.length === 0;
     },
   },
 };
@@ -228,8 +155,7 @@ span {
   font-size: 11px;
 }
 
-input[type="text"],
-input[type="url"] {
+input[type="text"] {
   width: 100%;
   padding: 8px 10px;
   font-size: 13px;
@@ -240,15 +166,6 @@ input[type="url"] {
 .form-section {
   flex-basis: 55%;
   margin-right: 30px;
-}
-
-h2:nth-child(1) {
-  margin: 0 0 0 20px;
-}
-
-h3 {
-  text-align: center;
-  margin-top: 20px;
 }
 
 .preview-card {
@@ -275,7 +192,7 @@ h3 {
 }
 
 img {
-  height: 100%;
+  height: fit-content;
   max-width: 100%;
 }
 
