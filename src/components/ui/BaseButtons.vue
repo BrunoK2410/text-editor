@@ -3,7 +3,7 @@
     <button class="cancel" @click="$emit('click-cancel')">CANCEL</button>
     <button
       @click="$emit('click-submit')"
-      :disabled="isConfirmDisabled"
+      :disabled="isSubmitDisabled"
       class="insert"
       :class="{
         'disable-button': isDisabledClass,
@@ -18,8 +18,8 @@
 
 <script>
 export default {
-  props: ["isConfirmDisabled", "isDisabledClass", "buttonText"],
-  emits: ["click-cancel", "submit"],
+  props: ["isSubmitDisabled", "isDisabledClass", "buttonText"],
+  emits: ["click-cancel", "click-submit"],
   computed: {
     isApplyButton() {
       return this.buttonText.trim().toUpperCase() === "APPLY";
