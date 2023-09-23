@@ -11,7 +11,7 @@
       <div class="form-control">
         <label for="duration">Duration (sec)</label>
         <div class="input-group">
-          <input type="button" value="-" @click="decrement" />
+          <input type="button" class="minus" value="-" @click="decrement" />
           <input
             type="number"
             id="duration"
@@ -21,10 +21,10 @@
             @keydown="checkValidKey"
             @input="checkValue"
           />
-          <input type="button" value="+" @click="increment" />
+          <input type="button" class="plus" value="+" @click="increment" />
         </div>
         <p v-if="!isValid" style="color: red">
-          Too high,maximum duration is 5 seconds
+          "Too high,maximum duration is 5 seconds."
         </p>
       </div>
       <div class="preview-card">
@@ -58,7 +58,7 @@
 
 <script>
 export default {
-  props: ["show"],
+  props: ["show", "insertTimer"],
   emits: ["close-dialog", "get-duration"],
   data() {
     return {
@@ -99,6 +99,7 @@ export default {
     },
     setTimer() {
       this.$emit("get-duration", this.duration);
+      this.insertTimer();
       this.$emit("close-dialog");
     },
     resetTimer() {
@@ -135,10 +136,6 @@ export default {
   margin: 20px;
 }
 
-h2 {
-  margin: 0;
-  text-align: center;
-}
 
 label {
   color: #555353;
@@ -154,6 +151,10 @@ label {
   align-items: center;
 }
 
+.form-control > p {
+  margin: 0;
+}
+
 input[type="number"] {
   padding: 8px 10px;
   font-size: 13px;
@@ -162,14 +163,35 @@ input[type="number"] {
   width: 200px;
 }
 input[type="button"] {
-  padding: 6px 10px;
-  cursor: pointer;
+  color: #fff;
+  border-radius: 50%;
+  border: 2px solid transparent;
   width: 30px;
-  margin: 2px;
+  padding: 4px;
+  cursor: pointer;
+  margin: 4px;
+  font-size: 18px;
 }
-input[type="button"]:active {
-  border: 2px solid #9292bb;
-  box-shadow: inset 1px 2px 5px #777;
+
+.minus {
+  background-color: #fa162d;
+}
+
+.minus:hover,
+.plus:hover {
+  border: 2px solid #000;
+}
+
+.minus:active {
+  background-color: #f74d5f;
+}
+
+.plus {
+  background-color: #20e62a;
+}
+
+.plus:active {
+  background-color: #68f76e;
 }
 
 #duration::-webkit-inner-spin-button,
