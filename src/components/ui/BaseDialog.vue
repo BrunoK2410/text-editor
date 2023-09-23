@@ -14,7 +14,7 @@
       <base-buttons
         @click-cancel="$emit('click-cancel')"
         @click-submit="$emit('click-submit')"
-        :isConfirmDisabled="isConfirmDisabled"
+        :isSubmitDisabled="isSubmitDisabled"
         :isDisabledClass="isDisabledClass"
         :buttonText="buttonText"
       ></base-buttons>
@@ -27,7 +27,7 @@ export default {
   props: [
     "show",
     "title",
-    "isConfirmDisabled",
+    "isSubmitDisabled",
     "isDisabledClass",
     "buttonText",
     "dialogSize",
@@ -57,7 +57,7 @@ export default {
 
 dialog {
   position: fixed;
-  top: 10vh;
+  top: 6vh;
   z-index: 100;
   border-radius: 12px 12px 0 0;
   border: none;
