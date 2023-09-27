@@ -1,11 +1,7 @@
 <template>
   <teleport to="body">
     <div v-if="show" class="backdrop"></div>
-    <dialog
-      open
-      v-if="show"
-      :class="{ 'small-dialog': isSmallDialog, 'big-dialog': isBigDialog }"
-    >
+    <dialog open v-if="show">
       <header>
         <h2>{{ title }}</h2>
       </header>
@@ -24,23 +20,8 @@
 
 <script>
 export default {
-  props: [
-    "show",
-    "title",
-    "isSubmitDisabled",
-    "isDisabledClass",
-    "buttonText",
-    "dialogSize",
-  ],
+  props: ["show", "title", "isSubmitDisabled", "isDisabledClass", "buttonText"],
   emits: ["click-cancel", "click-submit"],
-  computed: {
-    isSmallDialog() {
-      return this.dialogSize.trim().toUpperCase() === "SMALL";
-    },
-    isBigDialog() {
-      return this.dialogSize.trim().toUpperCase() === "BIG";
-    },
-  },
 };
 </script>
 
@@ -57,26 +38,23 @@ export default {
 
 dialog {
   position: fixed;
-  top: 6vh;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 100;
   border-radius: 12px 12px 0 0;
+  height: fit-content;
+  max-height: 90%;
+  width: 50%;
+  overflow: auto;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
-  margin: 0;
+  margin: auto;
   padding-right: 0;
   padding-left: 0;
   padding-bottom: 0;
-  overflow: hidden;
   background-color: white;
-}
-
-.small-dialog {
-  left: 30%;
-  width: 40%;
-}
-.big-dialog {
-  left: 20%;
-  width: 60%;
 }
 
 .close-button {
