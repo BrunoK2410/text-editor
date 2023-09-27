@@ -121,16 +121,14 @@
           </svg>
         </button>
       </div>
-      <div class="container">
-        <div
-          class="textarea"
-          contenteditable="true"
-          ref="editor"
-          id="editorId"
-          @input="isActive"
-          @mouseup="saveSelection"
-        ></div>
-      </div>
+      <div
+        class="textarea"
+        contenteditable="true"
+        ref="editor"
+        id="editorId"
+        @input="isActive"
+        @mouseup="saveSelection"
+      ></div>
     </div>
     <image-dialog
       :show="showImageDialog"
@@ -177,13 +175,14 @@ export default {
       receivedDuration: 0,
       isMessageSent: false,
       storedSelection: null,
+      editMode: false,
+      selectedTimer: null,
     };
   },
   methods: {
     insertTimer() {
       const timer = `
-
-        <div id="content" class="content" contenteditable="false" v-if="${this.isTimerSet}">
+        <div id="content" class="content" v-if="${this.isTimerSet}">
           <div class="pause">
             <svg
               focusable="false"
@@ -202,7 +201,7 @@ export default {
                 d="M6 4v8H4V4H6M6 3H4C3.4 3 3 3.4 3 4v8c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V4C7 3.4 6.6 3 6 3zM12 4v8h-2V4H12M12 3h-2C9.4 3 9 3.4 9 4v8c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V4C13 3.4 12.6 3 12 3z"
               ></path>
             </svg>
-            <p>Pause (${this.receivedDuration}s)</p>
+            <p data-duration="${this.receivedDuration}">Pause (${this.receivedDuration}s)</p>
           </div>
           <div class="timer-buttons">
             <button id="edit">
@@ -251,29 +250,44 @@ export default {
           </div>
         </div>
         `;
-      const timerAndNewEditor =
-        timer +
-        `<div id="newEditor" class="new-editor" contenteditable="true" data-title="Enter text that will be paused here"></div>`;
-      if (this.isTimerSet === true) {
-        const timerDiv = document.getElementById("content");
-        this.$refs.editor.removeChild(timerDiv);
-        const newEditor = document.getElementById("newEditor");
-        newEditor.insertAdjacentHTML("beforebegin", timer);
+      const tempContainer = document.createElement("div");
+      tempContainer.className = "pause-wrapper";
+      tempContainer.setAttribute("contenteditable", "false");
+      tempContainer.innerHTML = timer;
+
+      if (this.editMode) {
+        this.$refs.editor.replaceChild(tempContainer, this.selectedTimer);
+        this.editMode = false;
       } else {
-        this.$refs.editor.innerHTML += timerAndNewEditor;
+        if (this.storedSelection) {
+          this.storedSelection.deleteContents();
+          this.storedSelection.insertNode(tempContainer);
+        } else {
+          this.$refs.editor.appendChild(tempContainer);
+        }
+        const previousElement = tempContainer.previousSibling;
+        const nextElement = tempContainer.nextSibling;
+        if (
+          previousElement === null ||
+          previousElement.nodeType === Node.TEXT_NODE
+        ) {
+          this.$refs.editor.insertAdjacentHTML("afterbegin", "&nbsp;");
+        }
+        if (nextElement === null || nextElement.nodeType === Node.TEXT_NODE) {
+          this.$refs.editor.insertAdjacentHTML("beforeend", "&nbsp;");
+        }
       }
+
       this.isTimerSet = true;
       setTimeout(() => {
-        const editButton = document.getElementById("edit");
-        const deleteButton = document.getElementById("delete");
-        const newEditor = document.getElementById("newEditor");
-        editButton.addEventListener("click", () => {
-          this.openTimerDialog();
+        const editButton = tempContainer.querySelector("#edit");
+        const deleteButton = tempContainer.querySelector("#delete");
+        editButton.addEventListener("click", (event) => {
+          this.editTimer(event);
         });
-        deleteButton.addEventListener("click", () => {
-          this.deleteTimer();
+        deleteButton.addEventListener("click", (event) => {
+          this.deleteTimer(event);
         });
-        newEditor.focus();
       });
     },
     saveSelection() {
@@ -360,66 +374,100 @@ export default {
     closeLinkDialog() {
       this.showLinkDialog = false;
     },
-    send() {
+    async send() {
       const editor = document.getElementById("editorId");
       const output = document.getElementById("output");
       this.isMessageSent = true;
-      const message = editor.innerHTML;
-      if (this.isTimerSet) {
-        const timerDiv = document.getElementById("content");
-        const newEditor = document.getElementById("newEditor");
-        const delayedMessage = newEditor.innerHTML;
-        timerDiv.remove();
-        newEditor.remove();
-        const instantMessage = editor.innerHTML;
-        output.innerHTML += instantMessage;
-        setTimeout(() => {
-          output.innerHTML += delayedMessage;
-        }, this.receivedDuration * 1000);
-      } else {
-        output.innerHTML += message;
+
+      const tempElement = document.createElement("div");
+      tempElement.innerHTML = editor.innerHTML;
+
+      const processNode = async (node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          let textNode = document.createTextNode(node.textContent.trim());
+          const formattingTags = ["B", "I"];
+          const parentNodes = [];
+          let parentNode = node.parentNode;
+          while (parentNode) {
+            if (formattingTags.includes(parentNode.nodeName)) {
+              parentNodes.push(parentNode.nodeName);
+            }
+            parentNode = parentNode.parentNode;
+          }
+          if (parentNodes.length > 0) {
+            let formattedNode = textNode;
+            for (const tagName of parentNodes.reverse()) {
+              formattedNode = document.createElement(tagName);
+              formattedNode.appendChild(textNode);
+              textNode = formattedNode;
+            }
+            output.appendChild(formattedNode);
+          } else {
+            output.appendChild(textNode);
+          }
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.nodeName === "A") {
+            const link = document.createElement("a");
+            link.href = node.getAttribute("href");
+            link.textContent = node.textContent;
+            output.appendChild(link);
+          } else if (node.nodeName === "IMG") {
+            const image = document.createElement("img");
+            image.src = node.getAttribute("src");
+            image.alt = node.getAttribute("alt");
+            output.appendChild(image);
+          } else if (node.classList.contains("pause-wrapper")) {
+            const duration = node
+              .querySelector("p")
+              .getAttribute("data-duration");
+            if (!isNaN(duration) && duration > 0) {
+              await new Promise((resolve) => {
+                setTimeout(resolve, duration * 1000);
+              });
+              output.appendChild(document.createElement("br"));
+            }
+          } else {
+            for (const childNode of node.childNodes) {
+              await processNode(childNode);
+            }
+          }
+        }
+      };
+      for (const childNode of tempElement.childNodes) {
+        await processNode(childNode);
       }
       editor.innerHTML = "";
     },
     handleDuration(data) {
       this.receivedDuration = data;
-      const timerButton = document.getElementById("timerButton");
-      timerButton.disabled = true;
     },
-    deleteTimer() {
-      if (!this.isMessageSent) {
-        this.$refs.timerDialog.resetTimer();
-      }
-      this.isTimerSet = false;
-      const editor = this.$refs.editor;
-
-      const timerDiv = document.getElementById("content");
-      const newEditor = document.getElementById("newEditor");
-      const newEditorText = newEditor.innerHTML;
+    deleteTimer(event) {
+      const timerDiv = event.target.closest(".pause-wrapper");
       timerDiv.remove();
-      newEditor.remove();
-      editor.innerHTML += newEditorText;
-
-      const buttons = document.querySelectorAll(".buttons-wrapper button");
-      buttons.forEach((button) => {
-        button.disabled = false;
-      });
+    },
+    editTimer(event) {
+      this.editMode = true;
+      const timerDiv = event.target.closest(".pause-wrapper");
+      const paragraphElement = timerDiv.querySelector("p");
+      this.$refs.timerDialog.duration =
+        paragraphElement.getAttribute("data-duration");
+      this.selectedTimer = timerDiv;
+      this.openTimerDialog();
     },
   },
   mounted() {
     this.isActive();
-    const editButton = document.getElementById("edit");
-    const deleteButton = document.getElementById("delete");
-    if (editButton) {
-      editButton.addEventListener("click", () => {
-        this.openTimerDialog();
-      });
-      if (deleteButton) {
-        deleteButton.addEventListener("click", () => {
-          this.deleteTimer();
-        });
+    const editorWrapper = document.querySelector(".textarea");
+    editorWrapper.addEventListener("click", (event) => {
+      const clickedButton = event.target;
+      if (clickedButton.id === "edit") {
+        // Handle edit button click
+        this.editTimer(event);
+      } else if (clickedButton.id === "delete") {
+        // Handle delete button click
+        this.deleteTimer(event);
       }
-    }
+    });
   },
 };
 </script>
