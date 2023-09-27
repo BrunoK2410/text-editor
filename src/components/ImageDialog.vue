@@ -6,7 +6,6 @@
     @click-cancel="$emit('close-dialog')"
     :isSubmitDisabled="isImageNull"
     :isDisabledClass="isImageNull"
-    :dialogSize="'big'"
     :buttonText="'insert'"
   >
     <div class="main-content">
@@ -175,6 +174,8 @@ input[type="text"] {
   background-color: #f5f7f7;
   flex-basis: 45%;
   box-shadow: 1px 2px 5px #777;
+  height: fit-content;
+  min-height: 40vh;
 }
 
 .image-preview-title {
@@ -187,7 +188,7 @@ input[type="text"] {
 }
 
 .image-container {
-  height: 350px;
+  height: 100%;
   margin: 20px;
 }
 
