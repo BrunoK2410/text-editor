@@ -3,7 +3,6 @@
     :show="show"
     @click-cancel="$emit('close-dialog')"
     @click-submit="setTimer"
-    :dialogSize="'small'"
     :buttonText="'apply'"
     title="Add a pause response"
   >
@@ -15,7 +14,7 @@
           <input
             type="number"
             id="duration"
-            max="5"
+            max="10"
             min="1"
             v-model.number="duration"
             @keydown="checkValidKey"
@@ -80,15 +79,15 @@ export default {
       }
     },
     checkValue() {
-      if (this.duration > 5) {
+      if (this.duration > 10) {
         this.isValid = false;
-        this.duration = 5;
+        this.duration = 10;
       } else {
         this.isValid = true;
       }
     },
     increment() {
-      if (this.duration < 5) {
+      if (this.duration < 10) {
         this.duration++;
       }
     },
@@ -135,7 +134,6 @@ export default {
   align-items: center;
   margin: 20px;
 }
-
 
 label {
   color: #555353;
@@ -208,8 +206,8 @@ input[type="button"] {
   background-color: #f5f7f7;
   box-shadow: 1px 2px 5px #777;
   margin-top: 20px;
-  width: 400px;
-  height: 350px;
+  height: fit-content;
+  min-height: 30vh;
 }
 
 .timer-preview-header {
