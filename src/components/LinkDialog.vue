@@ -3,7 +3,6 @@
     :show="show"
     @click-submit="insertLink"
     @click-cancel="$emit('close-dialog')"
-    :dialogSize="'small'"
     :buttonText="'insert'"
     title="Insert link"
     :isSubmitDisabled="!validUrl"
