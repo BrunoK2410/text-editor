@@ -126,8 +126,9 @@
         contenteditable="true"
         ref="editor"
         id="editorId"
-        @input="isActive"
+        @input="handleInput"
         @mouseup="saveSelection"
+        @keyup="saveSelection"
       ></div>
     </div>
     <image-dialog
@@ -382,9 +383,9 @@ export default {
       const tempElement = document.createElement("div");
       tempElement.innerHTML = editor.innerHTML;
 
-      const processNode = async (node) => {
+      const processNode = async (node, isFirstNode, isLastNode) => {
         if (node.nodeType === Node.TEXT_NODE) {
-          let textNode = document.createTextNode(node.textContent.trim());
+          let textNode = document.createTextNode(node.textContent);
           const formattingTags = ["B", "I"];
           const parentNodes = [];
           let parentNode = node.parentNode;
@@ -401,9 +402,21 @@ export default {
               formattedNode.appendChild(textNode);
               textNode = formattedNode;
             }
+            if (isFirstNode) {
+              formattedNode.textContent = formattedNode.textContent.trimStart();
+            }
+            if (isLastNode) {
+              formattedNode.textContent = formattedNode.textContent.trimEnd();
+            }
             output.appendChild(formattedNode);
+            output.appendChild(document.createElement("br"));
           } else {
-            output.appendChild(textNode);
+            const trimmedText = isFirstNode
+              ? textNode.textContent.trimStart()
+              : isLastNode
+              ? textNode.textContent.trimEnd()
+              : textNode.textContent;
+            output.appendChild(document.createTextNode(trimmedText));
           }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           if (node.nodeName === "A") {
@@ -415,7 +428,11 @@ export default {
             const image = document.createElement("img");
             image.src = node.getAttribute("src");
             image.alt = node.getAttribute("alt");
+            output.appendChild(document.createElement("br"));
             output.appendChild(image);
+            output.appendChild(document.createElement("br"));
+          } else if (node.nodeName === "BR") {
+            output.appendChild(document.createElement("br"));
           } else if (node.classList.contains("pause-wrapper")) {
             const duration = node
               .querySelector("p")
@@ -427,15 +444,24 @@ export default {
               output.appendChild(document.createElement("br"));
             }
           } else {
-            for (const childNode of node.childNodes) {
-              await processNode(childNode);
+            const childNodes = node.childNodes;
+            for (let i = 0; i < childNodes.length; i++) {
+              const childNode = childNodes[i];
+              await processNode(
+                childNode,
+                isFirstNode && i === 0,
+                isLastNode && i === childNodes.length - 1
+              );
             }
           }
         }
       };
-      for (const childNode of tempElement.childNodes) {
-        await processNode(childNode);
+      const childNodes = tempElement.childNodes;
+      for (let i = 0; i < childNodes.length; i++) {
+        const childNode = childNodes[i];
+        await processNode(childNode, i === 0, i === childNodes.length - 1);
       }
+
       editor.innerHTML = "";
     },
     handleDuration(data) {
@@ -454,6 +480,10 @@ export default {
       this.selectedTimer = timerDiv;
       this.openTimerDialog();
     },
+    handleInput() {
+      this.isActive();
+      this.saveSelection();
+    },
   },
   mounted() {
     this.isActive();
@@ -461,10 +491,8 @@ export default {
     editorWrapper.addEventListener("click", (event) => {
       const clickedButton = event.target;
       if (clickedButton.id === "edit") {
-        // Handle edit button click
         this.editTimer(event);
       } else if (clickedButton.id === "delete") {
-        // Handle delete button click
         this.deleteTimer(event);
       }
     });
@@ -561,5 +589,6 @@ export default {
   outline-color: #326ecf;
   border: dotted 2px;
   padding: 10px;
+  display: inline-block;
 }
 </style>
