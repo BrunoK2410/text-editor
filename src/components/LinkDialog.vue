@@ -36,7 +36,7 @@
 
 <script>
 export default {
-  props: ["show", "getSelection"],
+  props: ["show", "getSelection",],
   emits: ["close-dialog", "click-submit"],
   data() {
     return {
