@@ -74,8 +74,30 @@ export default {
     };
   },
   methods: {
-    onFileChange(event) {
-      this.image = URL.createObjectURL(event.target.files[0]);
+    async onFileChange(event) {
+      const imageFile = event.target.files[0];
+      if (imageFile) {
+        const base64String = await convertFileToBase64(imageFile);
+        console.log(base64String);
+        this.image = base64String;
+      }
+      function convertFileToBase64(imageFile) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+
+          reader.onload = () => {
+            const fileType = imageFile.type.split("/")[1];
+            const base64String = reader.result.split(",")[1];
+            resolve(`data:image/${fileType};base64,${base64String}`);
+          };
+
+          reader.onerror = (error) => {
+            reject(error);
+          };
+
+          reader.readAsDataURL(imageFile);
+        });
+      }
       this.file = true;
     },
     resetInput() {
@@ -90,7 +112,7 @@ export default {
       imgElement.alt = this.altText;
       imgElement.title = this.imageTitle;
       if (this.getSelection) {
-        this.getSelection.deleteContents();
+        this.getSelection.collapse(false);
         this.getSelection.insertNode(imgElement);
         this.getSelection.setStartAfter(imgElement);
         this.getSelection.collapse(true);
@@ -195,6 +217,7 @@ input[type="text"] {
 img {
   height: fit-content;
   max-width: 100%;
+  min-width: 100%;
 }
 
 .disable {
