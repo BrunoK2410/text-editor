@@ -57,7 +57,7 @@
 
 <script>
 export default {
-  props: ["show", "insertTimer"],
+  props: ["show", "insertTimer",],
   emits: ["close-dialog", "get-duration"],
   data() {
     return {
