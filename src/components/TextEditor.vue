@@ -129,6 +129,7 @@
         @input="handleInput"
         @mouseup="saveSelection"
         @keyup="saveSelection"
+        @keydown="handleLineBreak"
       ></div>
     </div>
     <image-dialog
@@ -479,6 +480,13 @@ export default {
         paragraphElement.getAttribute("data-duration");
       this.selectedTimer = timerDiv;
       this.openTimerDialog();
+    },
+    handleLineBreak(event) {
+      console.log(event);
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.execCommand("insertLineBreak");
+      }
     },
     handleInput() {
       this.isActive();
